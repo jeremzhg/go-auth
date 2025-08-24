@@ -4,10 +4,13 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jeremzhg/go-auth/internal/configs"
+	"github.com/jeremzhg/go-auth/internal/handlers"
+	"github.com/jeremzhg/go-auth/internal/repository"
 	"github.com/joho/godotenv"
 )
 
@@ -28,7 +31,6 @@ func main() {
 	if err != nil{
 		log.Fatalf("failed to load configs: %v", err)
 	}
-
 	db, err := sql.Open("pgx", cfg.DSN)
 	if err != nil {
 		log.Fatalf("failed to open database connection: %v", err)
@@ -38,6 +40,9 @@ func main() {
 	}
 	log.Println("database connection successful")
 	defer db.Close()
+
+	policyRepo := &repository.PostgresPolicyRepo{DB: db}
+	policyHandler := handlers.PolicyHandler{Repo: policyRepo}
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +50,8 @@ func main() {
 			http.Error(w, "failed to write response", http.StatusInternalServerError)
 		}
 	})
-
+	r.Post("/policies", policyHandler.CreatePolicyHandler)
+	log.Printf("starting server on %s", cfg.Port)
 	if err := http.ListenAndServe(cfg.Port, r); err != nil {
 		log.Fatal(err)
 	}
