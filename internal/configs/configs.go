@@ -7,6 +7,7 @@ import(
 
 type Config struct{
 	Port string
+	DSN string
 }
 
 func Load()(res Config, err error){
@@ -18,5 +19,6 @@ func Load()(res Config, err error){
 		port = ":" + port
 	}
 
-	return Config{Port: port}, nil
+	dsn := os.Getenv("DB_DSN")
+	return Config{Port: port, DSN: dsn}, nil
 }

@@ -1,0 +1,16 @@
+# Git files
+.git
+.gitignore
+
+# Secrets
+.env
+
+# Database files
+*.db
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Documentation
+README.md
