@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-
+	"log"
 	"github.com/jeremzhg/go-auth/internal/models"
 	"github.com/jeremzhg/go-auth/internal/repository"
 )
@@ -21,6 +21,7 @@ func (h *PolicyHandler) CreatePolicyHandler(w http.ResponseWriter, r *http.Reque
 
 	id, err := h.Repo.CreatePolicy(policy)
 	if err != nil{
+		log.Printf("ERROR: failed to insert policy: %v", err)
 		http.Error(w, "failed to insert policy into db", http.StatusInternalServerError)
 		return
 	}

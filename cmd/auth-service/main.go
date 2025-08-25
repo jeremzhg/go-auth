@@ -18,10 +18,6 @@ type Application struct{
 	DB *sql.DB
 }
 
-func (app *Application) getHelloWorldHandler(w http.ResponseWriter, r *http.Request) {
-    w.Write([]byte("hello from the app struct"))
-}
-
 func main() {
 	// if err := godotenv.Load(); err != nil{
 	// 	log.Fatalf("failed to load env: %v", err)
