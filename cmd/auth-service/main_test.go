@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -17,19 +16,19 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-
+  "github.com/jmoiron/sqlx"
 	"github.com/jeremzhg/go-auth/internal/handlers"
 	"github.com/jeremzhg/go-auth/internal/repository"
 )
 
-func newTestDB(t *testing.T) *sql.DB {
+func newTestDB(t *testing.T) *sqlx.DB {
     dsn := os.Getenv("TEST_DB_DSN")
     if dsn == "" {
         godotenv.Load("../../.env") 
         dsn = os.Getenv("TEST_DB_DSN")
     }
 
-    db, err := sql.Open("pgx", dsn)
+    db, err := sqlx.Open("pgx", dsn)
     if err != nil {
         t.Fatalf("failed to open database connection: %v", err)
     }

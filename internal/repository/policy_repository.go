@@ -1,8 +1,7 @@
 package repository
 
 import (
-	"database/sql"
-
+    "github.com/jmoiron/sqlx"
 	"github.com/jeremzhg/go-auth/internal/models"
 )
 
@@ -11,7 +10,7 @@ type PolicyRepository interface {
 }
 
 type PostgresPolicyRepo struct {
-	DB *sql.DB
+	DB *sqlx.DB
 }
 
 func (repo *PostgresPolicyRepo) CreatePolicy(policy models.Policy) (int64, error) {

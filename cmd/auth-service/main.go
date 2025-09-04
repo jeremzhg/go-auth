@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 
@@ -12,12 +11,32 @@ import (
 	"github.com/jeremzhg/go-auth/internal/handlers"
 	"github.com/jeremzhg/go-auth/internal/repository"
 	"github.com/joho/godotenv"
+	"github.com/casbin/casbin/v2"
+	"fmt"
+	"github.com/jmoiron/sqlx"
+	sqlxadapter "github.com/memwey/casbin-sqlx-adapter"
 )
 
-type Application struct{
-	DB *sql.DB
-}
 
+func setupEnforcer(db *sqlx.DB) (*casbin.Enforcer, error) {
+    opts := &sqlxadapter.AdapterOptions{
+        DB:        db,
+        TableName: "policies",
+    }
+
+    adapter := sqlxadapter.NewAdapterFromOptions(opts)
+
+    enforcer, err := casbin.NewEnforcer("model.conf", adapter)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create casbin enforcer: %w", err)
+    }
+
+    if err := enforcer.LoadPolicy(); err != nil {
+        return nil, fmt.Errorf("failed to load casbin policy: %w", err)
+    }
+
+    return enforcer, nil
+}
 func main() {
 	// if err := godotenv.Load(); err != nil{
 	// 	log.Fatalf("failed to load env: %v", err)
@@ -27,7 +46,7 @@ func main() {
 	if err != nil{
 		log.Fatalf("failed to load configs: %v", err)
 	}
-	db, err := sql.Open("pgx", cfg.DSN)
+	db, err := sqlx.Open("pgx", cfg.DSN)
 	if err != nil {
 		log.Fatalf("failed to open database connection: %v", err)
 	}
