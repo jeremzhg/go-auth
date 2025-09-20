@@ -56,8 +56,13 @@ func main() {
 	log.Println("database connection successful")
 	defer db.Close()
 
+	enforcer, err := setupEnforcer(db)
+	if err != nil {
+			log.Fatalf("failed to create casbin enforcer: %v", err)
+	}
+
 	policyRepo := &repository.PostgresPolicyRepo{DB: db}
-	policyHandler := handlers.PolicyHandler{Repo: policyRepo}
+	policyHandler := handlers.PolicyHandler{Repo: policyRepo, Enforcer: enforcer}
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +70,10 @@ func main() {
 			http.Error(w, "failed to write response", http.StatusInternalServerError)
 		}
 	})
+	
 	r.Post("/policies", policyHandler.CreatePolicyHandler)
+	r.Post("/check", policyHandler.Check)
+
 	log.Printf("starting server on %s", cfg.Port)
 	if err := http.ListenAndServe(cfg.Port, r); err != nil {
 		log.Fatal(err)
