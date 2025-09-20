@@ -7,11 +7,9 @@ import (
 
 	"github.com/casbin/casbin/v2"
 	"github.com/jeremzhg/go-auth/internal/models"
-	"github.com/jeremzhg/go-auth/internal/repository"
 )
 
 type PolicyHandler struct {
-    Repo repository.PolicyRepository
 		Enforcer *casbin.Enforcer
 }
 
@@ -26,14 +24,13 @@ func (h *PolicyHandler) CreatePolicyHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	id, err := h.Repo.CreatePolicy(policy)
+	_, err := h.Enforcer.AddPolicy(policy.Subject, policy.Object, policy.Action)
 	if err != nil{
 		log.Printf("ERROR: failed to insert policy: %v", err)
 		http.Error(w, "failed to insert policy into db", http.StatusInternalServerError)
 		return
 	}
 
-	policy.Id = int(id)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(policy)
