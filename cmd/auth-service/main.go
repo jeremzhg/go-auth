@@ -9,7 +9,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jeremzhg/go-auth/internal/configs"
 	"github.com/jeremzhg/go-auth/internal/handlers"
-	"github.com/jeremzhg/go-auth/internal/repository"
 	"github.com/joho/godotenv"
 	"github.com/casbin/casbin/v2"
 	"fmt"
@@ -61,8 +60,7 @@ func main() {
 			log.Fatalf("failed to create casbin enforcer: %v", err)
 	}
 
-	policyRepo := &repository.PostgresPolicyRepo{DB: db}
-	policyHandler := handlers.PolicyHandler{Repo: policyRepo, Enforcer: enforcer}
+	policyHandler := &handlers.PolicyHandler{Enforcer: enforcer}
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +68,7 @@ func main() {
 			http.Error(w, "failed to write response", http.StatusInternalServerError)
 		}
 	})
-	
+
 	r.Post("/policies", policyHandler.CreatePolicyHandler)
 	r.Post("/check", policyHandler.Check)
 
