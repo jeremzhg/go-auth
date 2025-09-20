@@ -13,17 +13,11 @@ type PostgresPolicyRepo struct {
 	DB *sqlx.DB
 }
 
-func (repo *PostgresPolicyRepo) CreatePolicy(policy models.Policy) (int64, error) {
-    var newID int64
-    
-    query := `INSERT INTO policies (subject, object, action) 
-              VALUES ($1, $2, $3) 
-              RETURNING id`
+func (r *PostgresPolicyRepo) CreatePolicy(policy models.Policy) (error) {
+    query := `INSERT INTO policies (ptype, v0, v1, v2) 
+              VALUES ('p', $1, $2, $3)`
 
-    err := repo.DB.QueryRow(query, policy.Subject, policy.Object, policy.Action).Scan(&newID)
-    if err != nil {
-        return 0, err
-    }
+    _, err := r.DB.Exec(query, policy.Subject, policy.Object, policy.Action)
 
-    return newID, nil
+    return err
 }
