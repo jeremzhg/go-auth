@@ -127,7 +127,7 @@ func TestCheckEndpoint(t *testing.T) {
 
 	// Seed the database with a policy for this test
 	testPolicy := models.Policy{Subject: "user:test", Object: "resource:1", Action: "read"}
-	_, err := policyHandler.Repo.CreatePolicy(testPolicy)
+	err := policyHandler.Repo.CreatePolicy(testPolicy)
 	if err != nil {
 		t.Fatalf("failed to seed test policy: %v", err)
 	}
