@@ -3,12 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jeremzhg/go-auth/internal/configs"
 	"github.com/jeremzhg/go-auth/internal/handlers"
+	mw "github.com/jeremzhg/go-auth/internal/middleware"
 	"github.com/joho/godotenv"
 	"github.com/casbin/casbin/v2"
 	"fmt"
@@ -63,14 +63,12 @@ func main() {
 	policyHandler := &handlers.PolicyHandler{Enforcer: enforcer}
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := w.Write([]byte("hello world")); err != nil {
-			http.Error(w, "failed to write response", http.StatusInternalServerError)
-		}
-	})
 
-	r.Post("/policies", policyHandler.CreatePolicyHandler)
 	r.Post("/check", policyHandler.Check)
+	r.Group(func(r chi.Router) {
+    r.Use(mw.APIKeyAuth(cfg.APIKey)) 
+    r.Post("/policies", policyHandler.CreatePolicyHandler)
+	})
 
 	log.Printf("starting server on %s", cfg.Port)
 	if err := http.ListenAndServe(cfg.Port, r); err != nil {
