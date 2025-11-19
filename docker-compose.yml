@@ -25,5 +25,5 @@ services:
       - postgres
     environment:
       - DB_DSN=postgres://myuser:mypassword@postgres:5432/mydb?sslmode=disable
-      - API_KEY=api-seccret
+      - API_KEY=api-secret
       - PORT=8080

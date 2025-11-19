@@ -14,6 +14,7 @@ FROM alpine:latest
 
 COPY --from=builder /auth-service /auth-service
 COPY --from=builder /app/migrations /migrations
+COPY --from=builder /app/model.conf /model.conf
 
 EXPOSE 8080
 
