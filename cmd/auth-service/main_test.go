@@ -16,6 +16,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jmoiron/sqlx"
+	mw "github.com/jeremzhg/go-auth/internal/middleware"
 	"github.com/jeremzhg/go-auth/internal/handlers"
 	"github.com/joho/godotenv"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -73,11 +74,18 @@ func newTestApp(t *testing.T) *handlers.PolicyHandler {
 func TestCreatePolicyEndpoint(t *testing.T) {
 	policyHandler := newTestApp(t)
 	router := chi.NewRouter()
-	router.Post("/policies", policyHandler.CreatePolicyHandler)
+	apiKey := os.Getenv("API_KEY")
+	if apiKey == "" {
+			t.Fatal("API_KEY is missing");
+	}
+		
+	router.Use(mw.APIKeyAuth(apiKey))
 
+	router.Post("/policies", policyHandler.CreatePolicyHandler)
 	payload := `{"subject": "user:test", "action": "read", "object": "resource:123"}`
 	req := httptest.NewRequest(http.MethodPost, "/policies", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	rr := httptest.NewRecorder()
 
 	router.ServeHTTP(rr, req)
@@ -87,7 +95,7 @@ func TestCreatePolicyEndpoint(t *testing.T) {
 	}
 
 	var count int
-	// Use the NEW column names (v0, v1, v2) to verify
+
 	err := testDB.Get(&count, `SELECT COUNT(*) FROM policies WHERE v0=$1 AND v2=$2 AND v1=$3`,
 		"user:test", "read", "resource:123")
 	if err != nil {
@@ -102,8 +110,7 @@ func TestCheckEndpoint(t *testing.T) {
 	policyHandler := newTestApp(t)
 	router := chi.NewRouter()
 	router.Post("/check", policyHandler.Check)
-
-	// Seed the database using the ENFORCER, not the old repository
+	
 	_, err := policyHandler.Enforcer.AddPolicy("user:test", "resource:1", "read")
 	if err != nil {
 		t.Fatalf("failed to seed test policy: %v", err)

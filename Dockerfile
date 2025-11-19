@@ -13,6 +13,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /auth-service ./cmd/auth-service
 FROM alpine:latest
 
 COPY --from=builder /auth-service /auth-service
+COPY --from=builder /app/migrations /migrations
 
 EXPOSE 8080
 

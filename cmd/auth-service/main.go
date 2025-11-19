@@ -8,11 +8,15 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jeremzhg/go-auth/internal/configs"
 	"github.com/jeremzhg/go-auth/internal/handlers"
+	"time"
 	mw "github.com/jeremzhg/go-auth/internal/middleware"
 	"github.com/joho/godotenv"
 	"github.com/casbin/casbin/v2"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	sqlxadapter "github.com/memwey/casbin-sqlx-adapter"
 )
 
@@ -36,6 +40,7 @@ func setupEnforcer(db *sqlx.DB) (*casbin.Enforcer, error) {
 
     return enforcer, nil
 }
+
 func main() {
 	// if err := godotenv.Load(); err != nil{
 	// 	log.Fatalf("failed to load env: %v", err)
@@ -45,15 +50,34 @@ func main() {
 	if err != nil{
 		log.Fatalf("failed to load configs: %v", err)
 	}
-	db, err := sqlx.Open("pgx", cfg.DSN)
+	var db *sqlx.DB
+	for i := 1; i <= 10; i++ {
+			db, err = sqlx.Open("pgx", cfg.DSN)
+			if err == nil {
+					err = db.Ping()
+			}
+			if err == nil {
+					log.Println("successfully connected to db")
+					break
+			}
+			log.Printf("attempt %d: failed to connect to db, error: %v", i, err)
+			time.Sleep(2 * time.Second)
+	}
+
 	if err != nil {
-		log.Fatalf("failed to open database connection: %v", err)
+			log.Fatalf("Could not connect to database after multiple retries: %v", err)
 	}
-	if err := db.Ping(); err != nil {
-    log.Fatalf("failed to ping database: %v", err)
-	}
-	log.Println("database connection successful")
 	defer db.Close()
+
+	log.Println("Running database migrations...")
+	m, err := migrate.New("file://migrations", cfg.DSN)
+	if err != nil {
+			log.Fatalf("could not create migrator: %v", err)
+	}
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+			log.Fatalf("could not run migrations: %v", err)
+	}
+	log.Println("migrations completed successfully.")
 
 	enforcer, err := setupEnforcer(db)
 	if err != nil {
