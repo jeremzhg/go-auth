@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+
+  postgres_test:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: myuser_test
+      POSTGRES_PASSWORD: mypassword_test
+      POSTGRES_DB: mydb_test
+    ports:
+      - "5433:5432"
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      - DB_DSN=postgres://myuser:mypassword@postgres:5432/mydb?sslmode=disable
+      - API_KEY=api-seccret
+      - PORT=8080
